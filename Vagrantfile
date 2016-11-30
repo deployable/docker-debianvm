@@ -68,18 +68,21 @@ Vagrant.configure(2) do |config|
   # documentation for more information about their specific syntax and use.
   config.vm.provision "shell", inline: <<-SHELL
     sudo apt-get update
-    sudo apt-get upgrade
+    sudo apt-get upgrade -y
  
     # vbox guest additions
-    sudo apt-get install -y build-essential module-assistant 
+    sudo apt-get install -y build-essential module-assistant linux-headers-amd64
     sudo wget --progress=dot:giga -O VBoxGuestAdditions_5.1.8.iso -c http://download.virtualbox.org/virtualbox/5.1.8/VBoxGuestAdditions_5.1.8.iso
+    mount -o loop,ro VBoxGuestAdditions_5.1.8.iso /mnt
+    sudo sh /mnt/VBoxLinuxAdditions.run
+    sudo umount /mnt
     
     # Docker
     sudo apt-get install apt-transport-https ca-certificates
     sudo apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys 58118E89F3A912897C070ADBF76221572C52609D
-    echo 'deb https://apt.dockerproject.org/repo debian-jessie main' | sudo tee -f /etc/apt/sources.list.d/docker.list
+    echo 'deb https://apt.dockerproject.org/repo debian-jessie main' | sudo tee /etc/apt/sources.list.d/docker.list
     sudo apt-get update
-    sudo apt-get install docker-engine
+    sudo apt-get install docker-engine -y
     sudo systemctl start docker.service
     sudo docker run busybox echo "hello world!" 
   SHELL
