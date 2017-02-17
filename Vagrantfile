@@ -13,42 +13,27 @@ Vagrant.configure(2) do |config|
   # Every Vagrant development environment requires a box. You can search for
   # boxes at https://atlas.hashicorp.com/search.
   config.vm.box = "debian/jessie64"
-
-  # Disable automatic box update checking. If you disable this, then
-  # boxes will only be checked for updates when the user runs
-  # `vagrant box outdated`. This is not recommended.
-  # config.vm.box_check_update = false
+  config.vm.box_check_update = false
 
   # Create a forwarded port mapping which allows access to a specific port
-  # within the machine from a port on the host machine. In the example below,
-  # accessing "localhost:8080" will access port 80 on the guest machine.
   # config.vm.network "forwarded_port", guest: 80, host: 8080
 
-  # Create a private network, which allows host-only access to the machine
-  # using a specific IP.
-  # config.vm.network "private_network", ip: "192.168.33.10"
+  # Create a private network, which allows host-only access, fix the ip
+  config.vm.network "private_network", ip: "192.168.98.20"
+  config.vm.network "private_network", ip: "192.168.98.30", auto_config: false
+  #config.vm.provision "shell", run: "always", inline: "set -uex; ip ad sh dev br0 || ; ip ad sh dev br0 | grep -q 192\.168\.98\.30 || (ip ad add 192.168.98.30/24 dev br0 && ip link set dev br0 up)"
 
-  # Create a public network, which generally matched to bridged network.
-  # Bridged networks make the machine appear as another physical device on
-  # your network.
+  # Create a public network, bridged network.
   # config.vm.network "public_network"
-  config.vm.network "public_network"
-  config.vm.network "public_network"
 
-  # Share an additional folder to the guest VM. The first argument is
-  # the path on the host to the actual folder. The second argument is
-  # the path on the guest to mount the folder. And the optional third
-  # argument is a set of non-required options.
+  # Share an additional folder to the guest VM
   # config.vm.synced_folder "../data", "/vagrant_data"
 
   # Provider-specific configuration so you can fine-tune various
   # backing providers for Vagrant. These expose provider-specific options.
-  # Example for VirtualBox:
-  #
   config.vm.provider "virtualbox" do |vb|
   #   # Display the VirtualBox GUI when booting the machine
   #   vb.gui = true
-  #
   #   # Customize the amount of memory on the VM:
     vb.memory = "1024"
   end
@@ -67,23 +52,49 @@ Vagrant.configure(2) do |config|
   # Puppet, Chef, Ansible, Salt, and Docker are also available. Please see the
   # documentation for more information about their specific syntax and use.
   config.vm.provision "shell", inline: <<-SHELL
-    sudo apt-get update
-    sudo apt-get upgrade -y
+    set -uex
+    apt-get update -y
+    apt-get upgrade -y
  
     # vbox guest additions
-    sudo apt-get install -y build-essential module-assistant linux-headers-amd64
-    sudo wget --progress=dot:giga -O VBoxGuestAdditions_5.1.8.iso -c http://download.virtualbox.org/virtualbox/5.1.8/VBoxGuestAdditions_5.1.8.iso
-    mount -o loop,ro VBoxGuestAdditions_5.1.8.iso /mnt
-    sudo sh /mnt/VBoxLinuxAdditions.run
-    sudo umount /mnt
+    vbox_version="5.1.14"
+    guest_install=1
+    if lsmod | grep -qi vboxguest; then 
+      guest_version=$(modinfo vboxguest | awk '/^version:/ { print $2 }' 2>/dev/null)
+      if [ "$guest_version" == "$vbox_version" ]; then
+        guest_install=0
+      fi
+    fi; 
+    if [ "$guest_install" == "1" ]; then
+      apt-get install -y build-essential module-assistant linux-headers-amd64
+      wget --progress=dot:giga -O VBoxGuestAdditions_${vbox_version}.iso -c http://download.virtualbox.org/virtualbox/${vbox_version}/VBoxGuestAdditions_${vbox_version}.iso
+      mount -o loop,ro VBoxGuestAdditions_${vbox_version}.iso /mnt
+      sh /mnt/VBoxLinuxAdditions.run
+      umount /mnt
+    fi
     
     # Docker
-    sudo apt-get install apt-transport-https ca-certificates
-    sudo apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys 58118E89F3A912897C070ADBF76221572C52609D
-    echo 'deb https://apt.dockerproject.org/repo debian-jessie main' | sudo tee /etc/apt/sources.list.d/docker.list
-    sudo apt-get update
-    sudo apt-get install docker-engine -y
-    sudo systemctl start docker.service
-    sudo docker run busybox echo "hello world!" 
+    apt-get install apt-transport-https ca-certificates -y
+    apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys 58118E89F3A912897C070ADBF76221572C52609D
+    grep -q 'deb https://apt.dockerproject.org/repo debian-jessie main' /etc/apt/sources.list.d/docker.list || echo 'deb https://apt.dockerproject.org/repo debian-jessie main' > /etc/apt/sources.list.d/docker.list
+    apt-get update
+    apt-get install docker-engine -y
+    systemctl start docker.service
+    docker run busybox echo "hello world!" 
+
+    # Setup bridge/eth2 interface
+    apt-get install bridge-utils
+    grep -q 'auto eth2' || echo 'auto eth2' >> /etc/network/interfaces
+    grep -q 'iface eth2 inet manual' || echo 'iface eth2 inet manual' >> /etc/network/interfaces
+    grep -q 'auto brosx0' || echo 'auto brosx0' >> /etc/network/interfaces
+    echo 'iface brosx0 inet static
+    bridge_ports eth2
+        address 192.168.98.30
+        broadcast 192.168.98.255
+        netmask 255.255.255.0
+        gateway 192.168.98.1' >> /etc/network/interfaces
+    ifdown eth2 && ifup eth2
+    ifdown brosx0 && ifup brosx0
+    
   SHELL
 end
