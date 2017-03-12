@@ -17,11 +17,12 @@ Vagrant.configure(2) do |config|
 
   # Create a forwarded port mapping which allows access to a specific port
   # config.vm.network "forwarded_port", guest: 80, host: 8080
+  config.vm.network :forwarded_port, guest: 22, host: 2232
 
   # Create a private network, which allows host-only access, fix the ip
-  config.vm.network "private_network", ip: "192.168.98.20"
-  config.vm.network "private_network", ip: "192.168.98.30", auto_config: false
-  #config.vm.provision "shell", run: "always", inline: "set -uex; ip ad sh dev br0 || ; ip ad sh dev br0 | grep -q 192\.168\.98\.30 || (ip ad add 192.168.98.30/24 dev br0 && ip link set dev br0 up)"
+  config.vm.network "private_network", ip: "192.168.98.20", auto_config: false
+  #config.vm.provision "shell", run: "always", inline: "set -uex; ip ad sh dev br0 || ; ip ad sh dev br0 | grep -q 192\.168\.98\.20 || (ip ad add 192.168.98.20/24 dev br0 && ip link set dev br0 up)"
+
 
   # Create a public network, bridged network.
   # config.vm.network "public_network"
@@ -57,7 +58,7 @@ Vagrant.configure(2) do |config|
     apt-get upgrade -y
  
     # vbox guest additions
-    vbox_version="5.1.14"
+    vbox_version="5.1.16"
     guest_install=1
     if lsmod | grep -qi vboxguest; then 
       guest_version=$(modinfo vboxguest | awk '/^version:/ { print $2 }' 2>/dev/null)
@@ -84,17 +85,17 @@ Vagrant.configure(2) do |config|
 
     # Setup bridge/eth2 interface
     apt-get install bridge-utils
-    grep -q 'auto eth2' || echo 'auto eth2' >> /etc/network/interfaces
-    grep -q 'iface eth2 inet manual' || echo 'iface eth2 inet manual' >> /etc/network/interfaces
-    grep -q 'auto brosx0' || echo 'auto brosx0' >> /etc/network/interfaces
-    echo 'iface brosx0 inet static
-    bridge_ports eth2
+    grep -q 'auto eth1' || echo 'auto eth1' >> /etc/network/interfaces
+    grep -q 'iface eth1 inet manual' || echo 'iface eth1 inet manual' >> /etc/network/interfaces
+    grep -q 'auto brocker0' || echo 'auto brocker0' >> /etc/network/interfaces
+    echo 'iface brocker0 inet static
+    bridge_ports eth1
         address 192.168.98.30
         broadcast 192.168.98.255
         netmask 255.255.255.0
         gateway 192.168.98.1' >> /etc/network/interfaces
-    ifdown eth2 && ifup eth2
-    ifdown brosx0 && ifup brosx0
+    ifdown eth1 && ifup eth1
+    ifdown brocker0 && ifup brocker0
     
   SHELL
 end
