@@ -12,7 +12,7 @@ Vagrant.configure(2) do |config|
 
   # Every Vagrant development environment requires a box. You can search for
   # boxes at https://atlas.hashicorp.com/search.
-  config.vm.box = "debian/jessie64"
+  config.vm.box = "debian/stretch64"
   config.vm.box_check_update = false
 
   # Create a forwarded port mapping which allows access to a specific port
@@ -75,9 +75,9 @@ Vagrant.configure(2) do |config|
     fi
     
     # Docker
-    apt-get install apt-transport-https ca-certificates -y
+    apt-get install apt-transport-https ca-certificates dirmngr -y
     apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys 58118E89F3A912897C070ADBF76221572C52609D
-    grep -q 'deb https://apt.dockerproject.org/repo debian-jessie main' /etc/apt/sources.list.d/docker.list || echo 'deb https://apt.dockerproject.org/repo debian-jessie main' > /etc/apt/sources.list.d/docker.list
+    grep -q 'deb https://apt.dockerproject.org/repo debian-stretch main' /etc/apt/sources.list.d/docker.list || echo 'deb https://apt.dockerproject.org/repo debian-stretch main' > /etc/apt/sources.list.d/docker.list
     apt-get update
     apt-get install docker-engine -y
     systemctl start docker.service
