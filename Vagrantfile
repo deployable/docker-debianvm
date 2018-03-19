@@ -25,7 +25,7 @@ Vagrant.configure(2) do |config|
 
 
   # Create a public network, bridged network.
-  # config.vm.network "public_network"
+  #config.vm.network "public_network"
 
   # Share an additional folder to the guest VM
   # config.vm.synced_folder "../data", "/vagrant_data"
@@ -36,7 +36,7 @@ Vagrant.configure(2) do |config|
   #   # Display the VirtualBox GUI when booting the machine
   #   vb.gui = true
   #   # Customize the amount of memory on the VM:
-    vb.memory = "1024"
+    vb.memory = "1500"
   end
   #
   # View the documentation for the provider you are using for more
