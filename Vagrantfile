@@ -36,7 +36,10 @@ Vagrant.configure(2) do |config|
   #   # Display the VirtualBox GUI when booting the machine
   #   vb.gui = true
   #   # Customize the amount of memory on the VM:
-    vb.memory = "1500"
+    vb.memory = "1200"
+    vb.customize ['modifyvm', :id, '--nictype1', 'Am79C970A']
+    vb.customize ['modifyvm', :id, '--nictype2', 'Am79C970A']
+    vb.customize ['modifyvm', :id, '--nicpromisc2', 'allow-all']
   end
   #
   # View the documentation for the provider you are using for more
@@ -81,7 +84,11 @@ Vagrant.configure(2) do |config|
     apt-get update
     apt-get install docker-engine -y
     systemctl start docker.service
-    docker run busybox echo "hello world!" 
+    docker run alpine echo "hello world!" 
+
+    # Pipework
+    wget -O /usr/local/bin/pipework https://raw.githubusercontent.com/jpetazzo/pipework/ae42f1b5fef82b3bc23fe93c95c345e7af65fef3/pipework
+    chmod 755 /usr/local/bin/pipework 
 
     # Setup bridge/eth2 interface
     apt-get install bridge-utils
@@ -92,10 +99,15 @@ Vagrant.configure(2) do |config|
     bridge_ports eth1
         address 192.168.98.30
         broadcast 192.168.98.255
-        netmask 255.255.255.0
-        gateway 192.168.98.1' >> /etc/network/interfaces
+        netmask 255.255.255.0' >> /etc/network/interfaces
     ifdown eth1 && ifup eth1
-    ifdown brocker0 && ifup brocker0
-    
+    if ! ip link sh brocker0; then ifup brocker0; fi
+
+    docker network create --driver=bridge \
+       --subnet 192.168.98.0/24 \
+       --gateway=192.168.98.30 \
+       --ip-range=192.168.98.128/25 \
+       vmhost \
+       -o "com.docker.network.bridge.name"="brocker0"    
   SHELL
 end
