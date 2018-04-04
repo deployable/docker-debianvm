@@ -1,9 +1,19 @@
 # Docker Debian VM
 
-Vagrant Debian VM running the latest Docker, with a host accessible bridge network for containers.
+Vagrant Debian VM running the latest Docker, with a host accessible bridge network available for containers.
+
+### Usage
 
 ```
 osx# vagrant up
+osx# export DOCKER_HOST=tcp://192.168.98.30:2375
+osx# CID=$(docker run --net=vmhost --ip 192.168.98.10 -d --rm alpine nc -l -p 8080 -e echo hi!)
+osx# nc 192.168.98.10 8080
+hi!
+```
+
+More detailed networking
+```
 osx# vagrant ssh
 
 dkr$ sudo docker network inspect vmhost
@@ -20,13 +30,11 @@ PING 192.168.98.20 (192.168.98.20): 56 data bytes
 
 ### VM Interfaces
 
-`eth0` is the standard NAT interface for Vagrant
+`eth0` is the standard VM NAT interface for Vagrant
 
-`eth1` is a host only adapter attached to the 192.168.98.0/24 network
+`eth1` is a VM host only adapter attached to the 192.168.98.0/24 host network (vboxnet)
 
-The `brocker0` bridge has eth1 attached and is assigned 192.168.98.30
+The `brocker0` bridge has `eth1` attached and is assigned 192.168.98.30. This is the Docker host address to use. `export DOCKER_HOST=tcp://192.168.98.30:2375`
 
-Containers attached to the `vmhost` network on `brocker0` and assigned an address in the 
-192.168.98.0/24 range become directly accessible from the VM Host. 
-
+Containers attached to the `vmhost` Docker network, which is backed by the `brocker0` bridge, will be auto assigned an address in the 192.168.98.128/25 range and be directly accessible from the VM Host. No port mapping required. 
 

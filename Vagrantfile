@@ -83,7 +83,16 @@ Vagrant.configure(2) do |config|
     grep -q 'deb https://apt.dockerproject.org/repo debian-stretch main' /etc/apt/sources.list.d/docker.list || echo 'deb https://apt.dockerproject.org/repo debian-stretch main' > /etc/apt/sources.list.d/docker.list
     apt-get update
     apt-get install docker-engine -y
-    systemctl start docker.service
+    # Liste on Tcp
+    [ -d /etc/systemd/system/docker.service.d ] || mkdir /etc/systemd/system/docker.service.d
+    if [ ! -f /etc/systemd/system/docker.service.d/override.conf ]; then 
+      echo '[Service]
+Environment="DOCKERD_EXTRA_OPTS=-H tcp://0.0.0.0:2375"' > /etc/systemd/system/docker.service.d/override.conf
+    fi
+    if ! grep DOCKERD_EXTRA_OPTS /lib/systemd/system/docker.service; then
+      sed -i '/ExecStart/s/$/ $DOCKERD_EXTRA_OPTS/' /lib/systemd/system/docker.service
+    fi
+    systemctl restart docker.service
     docker run alpine echo "hello world!" 
 
     # Pipework
