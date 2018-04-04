@@ -83,7 +83,7 @@ Vagrant.configure(2) do |config|
     grep -q 'deb https://apt.dockerproject.org/repo debian-stretch main' /etc/apt/sources.list.d/docker.list || echo 'deb https://apt.dockerproject.org/repo debian-stretch main' > /etc/apt/sources.list.d/docker.list
     apt-get update
     apt-get install docker-engine -y
-    # Liste on Tcp
+    # Listen on Tcp
     [ -d /etc/systemd/system/docker.service.d ] || mkdir /etc/systemd/system/docker.service.d
     if [ ! -f /etc/systemd/system/docker.service.d/override.conf ]; then 
       echo '[Service]
